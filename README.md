@@ -96,22 +96,18 @@ cd esp32libraries
 ## 构建与烧录
 
 ```bash
-# 安装 ESP-IDF 工具链（仅首次）
-cd esp32libraries/esp-idf
-./install.sh
-cd ../..
-
 # 导出环境变量（每次新开终端需执行）
-. ./esp32libraries/esp-idf/export.sh
+source ./esp32libraries/esp-idf/export.sh
 
+cd src/
 # 构建
-idf.py -C src build
+idf.py build
 
 # 烧录（根据实际串口设备调整）
-idf.py -C src -p /dev/ttyUSB0 flash
+idf.py flash
 
 # 监视串口输出
-idf.py -C src -p /dev/ttyUSB0 monitor
+idf.py monitor
 ```
 
 ## 驱动模块 (stepper_ledc)
