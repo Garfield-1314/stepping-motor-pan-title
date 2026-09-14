@@ -62,9 +62,10 @@
 ```
 stepping-motor-pan-title/
 ├── .gitignore              # Git 忽略规则
-├── .gitmodules             # esp-idf 子模块引用
+├── .gitmodules             # esp32libraries 子模块引用
 ├── README.md               # 本文件
-├── esp-idf/                # ESP-IDF 子模块（需手动初始化，见下方）
+├── esp32libraries/         # ESP 库子模块（需手动初始化，见下方）
+│   └── esp-idf/            # ESP-IDF 子模块（嵌套在 esp32libraries 中）
 └── src/
     ├── CMakeLists.txt      # 项目根构建文件
     └── main/
@@ -83,39 +84,30 @@ stepping-motor-pan-title/
 
 ## 获取 ESP-IDF 子模块
 
-本项目以 Git 子模块方式引用 ESP-IDF，首次克隆后需手动拉取：
+本项目以嵌套 Git 子模块方式引用 ESP-IDF，首次克隆后需手动拉取：
 
 ```bash
-# 方式一：克隆时递归初始化子模块
-git clone --recursive git@github.com:Garfield-1314/stepping-motor-pan-title.git
-cd stepping-motor-pan-title
-
-# 方式二：已克隆但未拉取子模块，手动初始化
-git submodule update --init --recursive
-cd esp32libraries/
+git submodule update --init
+cd esp32libraries
 ```
 
-> **注意**：ESP-IDF 仓库较大（~2GB），`--recursive` 会同时拉取其内部子组件（工具链、示例等），耗时较长，请确保网络稳定。若中途失败可重复执行直到成功。
+进入 `esp32libraries` 目录后，按照其 `README.md` 中的说明拉取 ESP-IDF 子模块。
 
 ## 构建与烧录
 
 ```bash
-# 安装 ESP-IDF 工具链（仅首次）
-cd esp-idf
-./install.sh
-cd ..
-
 # 导出环境变量（每次新开终端需执行）
-. ./esp-idf/export.sh
+source ./esp32libraries/esp-idf/export.sh
 
+cd src/
 # 构建
-idf.py -C src build
+idf.py build
 
 # 烧录（根据实际串口设备调整）
-idf.py -C src -p /dev/ttyUSB0 flash
+idf.py flash
 
 # 监视串口输出
-idf.py -C src -p /dev/ttyUSB0 monitor
+idf.py monitor
 ```
 
 ## 驱动模块 (stepper_ledc)
