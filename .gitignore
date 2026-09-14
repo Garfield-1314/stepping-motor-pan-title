@@ -1,0 +1,29 @@
+# ESP-IDF Build
+build/
+sdkconfig
+sdkconfig.old
+src/sdkconfig
+
+# IDE - VSCode
+.vscode/
+.codex/
+.agents/
+# IDE - CLion
+.idea/
+cmake-build-*/
+
+# IDE - VS
+.vs/
+
+# Compiled Object files
+*.o
+*.obj
+*.elf
+
+# macOS
+.DS_Store
+
+# Editor temp files
+*~
+*.swp
+*.swo
