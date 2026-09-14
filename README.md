@@ -87,16 +87,11 @@ stepping-motor-pan-title/
 本项目以嵌套 Git 子模块方式引用 ESP-IDF，首次克隆后需手动拉取：
 
 ```bash
-# 1. 拉取 esp32libraries 子模块
 git submodule update --init
-
-# 2. 进入 esp32libraries 目录，拉取 ESP-IDF 子模块（递归）
 cd esp32libraries
-git submodule update --init --recursive
-cd ..
 ```
 
-> **注意**：ESP-IDF 仓库较大（~2GB），`--recursive` 会同时拉取其内部子组件（工具链、示例等），耗时较长，请确保网络稳定。若中途失败可重复执行直到成功。
+进入 `esp32libraries` 目录后，按照其 `README.md` 中的说明拉取 ESP-IDF 子模块。
 
 ## 构建与烧录
 
