@@ -14,7 +14,7 @@
 | PCA9546A SCL | GPIO19 | — |
 | PCA9546A SDA | GPIO18 | — |
 | PCA9546A RESET | GPIO10 | — |
-M116 | AS5600 编码器 Pan | PCA9546A CH0（I2C，0x36） | — |
+| AS5600 编码器 Pan | PCA9546A CH0（I2C，0x36） | — |
 | AS5600 编码器 Tilt | — | PCA9546A CH1（I2C，0x36） |
 
 > **细分**：新 PCB 上 A4988 的 MS1/MS2/MS3 已**硬件上拉到 VCC**，固定 **1/16 细分**，固件不再控制细分引脚。原 MS1/MS2/MS3 引脚（GPIO19/GPIO18/GPIO10）已释放：GPIO19/GPIO18 用于 PCA9546A 的 I2C（SCL/SDA），GPIO10 用于 PCA9546A 的 RESET 复位（低有效）。
@@ -60,39 +60,62 @@ M116 | AS5600 编码器 Pan | PCA9546A CH0（I2C，0x36） | — |
 ## 项目结构
 
 ```
-Pan-Tilt/
+stepping-motor-pan-title/
 ├── .gitignore              # Git 忽略规则
 ├── .gitmodules             # esp-idf 子模块引用
 ├── README.md               # 本文件
-├── esp-idf/                # ESP-IDF 子模块
-├── OpenMV Code/
-│   ├── PanTilt.py          # PanTilt 通信类（UART 驱动）
-│   ├── color_track.py      # 色块追踪 + PD 云台跟踪控制（主程序）
-│   ├── yolo_track.py       # YOLO V8 目标识别 + PD 云台跟踪控制
-│   ├── pid.py              # 位置式 PD 控制器
-│   ├── draw_path.py        # 云台绘制矩形和圆形路径
-│   ├── ball_chute.py       # 球道控制例程
-│   └── test.py             # 云台简单测试
+├── esp-idf/                # ESP-IDF 子模块（需手动初始化，见下方）
 └── src/
     ├── CMakeLists.txt      # 项目根构建文件
-    ├── sdkconfig           # 工程配置（FREERTOS_HZ=1000 等）
     └── main/
         ├── CMakeLists.txt          # 组件构建文件
         ├── main.c                  # 应用入口（电机 + 限位开关 + PCA9546A 初始化）
-        ├── stepper_ledc.c          # LEDC 步进驱动（方波生成 + 软件计数）
-        ├── stepper_ledc.h          # 驱动头文件（单轴/双轴并行 API）
-        ├── limit_switch.c          # 限位开关驱动（GPIO 输入轮询）
-        ├── limit_switch.h          # 限位开关头文件
-        ├── gcode_ledc.c            # G-code 串口命令解析器（LEDC 版）
-        ├── gcode_ledc.h            # 串口解析器头文件
-        ├── PCA9546A.c              # PCA9546A 4 通道 I2C 切换器驱动
-        ├── PCA9546A.h              # PCA9546A 驱动头文件
-        ├── AS5600.c                # AS5600 磁性旋转编码器驱动（I2C）
-        ├── AS5600.h                # AS5600 驱动头文件
-        ├── encoder.c               # 双编码器（Pan/Tilt）管理：通道切换 + 互斥锁
-        └── encoder.h               # 双编码器管理头文件
-        ├── nvs_params.c            # 系统参数存储（NVS 掉电保存）
-        └── nvs_params.h            # 参数存储头文件
+        ├── stepper_ledc.c/.h       # LEDC 步进驱动（方波生成 + 软件计数）
+        ├── limit_switch.c/.h       # 限位开关驱动（GPIO 输入轮询）
+        ├── gcode_ledc.c/.h         # G-code 串口命令解析器（LEDC 版）
+        ├── PCA9546A.c/.h           # PCA9546A 4 通道 I2C 切换器驱动
+        ├── AS5600.c/.h             # AS5600 磁性旋转编码器驱动（I2C）
+        ├── encoder.c/.h            # 双编码器（Pan/Tilt）管理：通道切换 + 互斥锁
+        └── nvs_params.c/.h         # 系统参数存储（NVS 掉电保存）
+```
+
+> **注意**：`sdkconfig` 由 `idf.py menuconfig` 或 `idf.py build` 自动生成，已加入 `.gitignore`，不纳入版本控制。
+
+## 获取 ESP-IDF 子模块
+
+本项目以 Git 子模块方式引用 ESP-IDF，首次克隆后需手动拉取：
+
+```bash
+# 方式一：克隆时递归初始化子模块
+git clone --recursive git@github.com:Garfield-1314/stepping-motor-pan-title.git
+cd stepping-motor-pan-title
+
+# 方式二：已克隆但未拉取子模块，手动初始化
+git submodule update --init --recursive
+cd esp32libraries/
+```
+
+> **注意**：ESP-IDF 仓库较大（~2GB），`--recursive` 会同时拉取其内部子组件（工具链、示例等），耗时较长，请确保网络稳定。若中途失败可重复执行直到成功。
+
+## 构建与烧录
+
+```bash
+# 安装 ESP-IDF 工具链（仅首次）
+cd esp-idf
+./install.sh
+cd ..
+
+# 导出环境变量（每次新开终端需执行）
+. ./esp-idf/export.sh
+
+# 构建
+idf.py -C src build
+
+# 烧录（根据实际串口设备调整）
+idf.py -C src -p /dev/ttyUSB0 flash
+
+# 监视串口输出
+idf.py -C src -p /dev/ttyUSB0 monitor
 ```
 
 ## 驱动模块 (stepper_ledc)
@@ -196,7 +219,7 @@ bool limit_switch_is_triggered(limit_switch_handle_t handle);
 2. Pan 负向、Tilt 正向以 `S`（默认 2000）恒速移动
 3. 每 20ms 轮询限位开关，触发即停止对应轴
 4. 按 `M220` 回退步数以半速**双轴并行**脱离开关（参数来自 NVS，掉电保持）
-5. 复位软件计数与绝对坐标为 0，输出 `OK`
+5. 复位软件计数与绝对坐标为 0，编码器归零，输出 `OK`
 
 > 若限位开关异常，G28 最多运行 15 秒或 50000 步后自动停止并返回错误。
 
@@ -228,49 +251,7 @@ M114
 
 ## 工程配置说明 (sdkconfig)
 
+`sdkconfig` 由 ESP-IDF 构建系统自动生成（`idf.py build` 或 `idf.py menuconfig`），已加入 `.gitignore`。首次构建时自动创建，关键配置项：
+
 - `CONFIG_FREERTOS_HZ=1000`：FreeRTOS tick = 1ms，保证轮询循环中 `vTaskDelay` 真实延时（原 100Hz 下 `pdMS_TO_TICKS(1)=0` 会忙等并饿死 IDLE 触发 task_wdt）
 - `CONFIG_IDF_TARGET="esp32c3"`，CPU 160MHz、XTAL 40MHz
-
-## OpenMV 端程序说明
-
-详细说明请参考 [`OpenMV Code/README.md`](OpenMV%20Code/README.md)，包含以下例程：
-
-| 文件 | 说明 |
-|------|------|
-| `PanTilt.py` | UART 通信驱动类 |
-| `color_track.py` | 色块追踪 + PD 控制（启动时自动 G28 回零） |
-| `pid.py` | 位置式 PD 控制器 |
-| `draw_path.py` | 云台绘制矩形/圆形路径（启动时自动 G28 回零） |
-| `ball_chute.py` | 球道控制 |
-| `test.py` | 云台运动测试（启动时自动 G28 回零） |
-
-OpenMV 启动流程：
-
-```
-M17                    → 使能电机
-M220 P3490 T2940       → 设置 G28 回退步数（可选：参数已掉电保存，此处为显式覆盖）
-G28 S2000              → 限位开关回零
-等待 OK                → 确认归零完成（超时或限位异常返回 ER）
-↓
-正常业务逻辑（色块追踪等）
-```
-
-## 构建与烧录
-
-```bash
-# 安装 ESP-IDF 工具链
-cd esp-idf
-./install.sh
-cd ..
-
-# 导出环境变量
-. ./esp-idf/export.sh
-
-# 构建
-idf.py -C src build
-
-# 烧录（根据实际串口设备调整）
-idf.py -C src -p /dev/ttyUSB0 flash
-
-# 监视串口输出
-idf.py -C src -p /dev/ttyUSB0 monitor

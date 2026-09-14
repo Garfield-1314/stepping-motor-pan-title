@@ -1,0 +1,3 @@
+[submodule "esp32libraries"]
+	path = esp32libraries
+	url = git@github.com:Garfield-1314/esp32libraries.git
